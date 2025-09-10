@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/labstack/echo/middleware"
 	"github.com/labstack/echo/v4"
 )
 
@@ -76,19 +77,48 @@ func deleteUser (c echo.Context) error {
 	return c.String(http.StatusOK, "TODO: DELETE User!")
 }
 
+func auth(username, password string, c echo.Context) (bool, error) {
+	if username == "joe" && password == "secret" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+
+
 func main () {
 	e := echo.New()
 
-	e.GET("/", home)
-	e.GET("/show", show)
+	// Root Level middle ware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-	e.POST("/save", save)
+	// Group level middle ware
+	g:= e.Group("/admin")
+	g.Use(middleware.BasicAuth(auth))
 
-	e.POST("/users", saveUser)
+	// Route level middle ware
+	track := func (next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			println("request to /users")
+			return next(c)
+		}
+	}
 
-	e.GET("/users/:id", getUser)
-	e.PUT("/users/:id", updateUser)
-	e.DELETE("/users/:id", deleteUser)
+
+	e.GET("/", home, track)
+	e.GET("/show", show, track)
+
+	e.POST("/save", save, track)
+
+	e.POST("/users", saveUser, track)
+
+	e.GET("/users/:id", getUser, track)
+	e.PUT("/users/:id", updateUser, track)
+	e.DELETE("/users/:id", deleteUser, track)
+
+	e.Static("/static", "static")
 
 	e.Logger.Fatal(e.Start(":1323"))
 }

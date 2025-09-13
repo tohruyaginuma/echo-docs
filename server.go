@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 type UserDTO struct {
@@ -132,10 +131,17 @@ func auth(username, password string, c echo.Context) (bool, error) {
 }
 
 func getUsers(c echo.Context) (err error) {
-	u := new(UserDTO)
-	if err := c.Bind(u); err != nil {
-	  return c.String(http.StatusBadRequest, "bad request")
-	}
+	// u := new(UserDTO)
+	// if err := c.Bind(u); err != nil {
+	//   return c.String(http.StatusBadRequest, "bad request")
+	// }
+
+	c.Response().Before(func() {
+		println("before response")
+	})
+	c.Response().After(func() {
+	println("after response")
+	})
 
 	// Load into separate struct for security
 	// user := User{
@@ -146,7 +152,7 @@ func getUsers(c echo.Context) (err error) {
 
 	// executeSomeBusinessLogic(user)
 
-	return c.JSON(http.StatusOK, u)
+	return c.String(http.StatusOK, "OK")
 }
 
 func fluentBinding(c echo.Context) (err error) {
@@ -224,40 +230,40 @@ func main () {
 	e := echo.New()
 
 	e.Debug = true
-	e.HideBanner = true
-	e.HidePort = true
-	
+	// e.HideBanner = true
+	// e.HidePort = true
+	// e.Pre(middleware.RemoveTrailingSlash())
 	// Custom http error handler
-	e.HTTPErrorHandler = customHTTPErrorHandler
+	// e.HTTPErrorHandler = customHTTPErrorHandler
 
 	// カスタムバリデータ登録できる
-	e.Validator = &CustomValidator{validator: validator.New()}
+	// e.Validator = &CustomValidator{validator: validator.New()}
 
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			cc := &CustomContext{c}
-			return next(cc)
-		}
-	})
+	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	// 	return func(c echo.Context) error {
+	// 		cc := &CustomContext{c}
+	// 		return next(cc)
+	// 	}
+	// })
 
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
-		}
-	})
+	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	// 	return func(c echo.Context) error {
+	// 		return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
+	// 	}
+	// })
 
 	// Root Level middle ware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	// e.Use(middleware.Logger())
+	// e.Use(middleware.Recover())
 
 	// Group level middle ware
-	g:= e.Group("/admin")
-	g.Use(middleware.BasicAuth(auth))
+	// g:= e.Group("/admin")
+	// g.Use(middleware.BasicAuth(auth))
 
 	// Route level middle ware
 	track := func (next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			println("request to /users")
+			// println("request to /users")
 			return next(c)
 		}
 	}
